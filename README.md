@@ -1,4 +1,8 @@
-# 1. Vehicle Counting Repository Setup Guide
+# 1. 🎥 Demo
+
+[Click here to watch the demo](demo.mp4)
+
+# 2. Vehicle Counting Repository Setup Guide
 
 ## Credits:
 
@@ -8,14 +12,9 @@ Before we begin, it's important to acknowledge the foundations upon which this p
 
 * **Object Detection:** This project utilizes the [ultralytics](https://github.com/mikel-brostrom/ultralytics) repository for object detection, licensed under the AGPL license.
 * **Object Tracking:** This project utilizes the [boxmot](https://github.com/mikel-brostrom/boxmot) repository for object tracking, also licensed under the AGPL license.
-* **Vehicle Counting:** This notebook is based on the [vehicle_counting_CV](https://github.com/hamzaelouiaazzani/vehicle_counting_CV) repository (My repository), which is also licensed under the AGPL license.
 
 This notebook provides step-by-step instructions to set up and run the vehicle counting application on four different platforms: Google Colab, Jupyter Notebooks, and via Bash/Linux commands and in  NANO JETSON Kit.
 ## 1.1. Google Colab
-If you prefer working with Colab notebooks, kindly click on the icon below to open the notebook in Google Colab:
-
-[![Open the Vehicle Counting Notebook In Colab](pictures/colab_icon.png)](https://colab.research.google.com/drive/1XNPEu142VLqV9YAFAkyJfvUbZsiPrP4q?usp=sharing)
-
 **Note:** Please don't forget to set the runtime type to **GPU (T4)** in Colab for optimal performance.
 
 ### Setting the Runtime to GPU (T4):
@@ -23,8 +22,7 @@ If you prefer working with Colab notebooks, kindly click on the icon below to op
 1. After the notebook opens, navigate to the top menu and select **Runtime** > **Change runtime type**.
 2. In the popup window, set **Hardware accelerator** to **GPU**.
 3. If available, select **T4** as the GPU type.
-
-Follow the instructions of the notebook. Feel Free to explore the code and make any customizations for you. The notebook is designed for you for this!
+4. Run the below code cells after setting .yaml config file with target rois, lines and params
 
 ## 1.2. Jupyter Notebooks
 
@@ -56,10 +54,10 @@ This step assumes you have already installed Anaconda in your computer
 > **Note:** You can neglect the above two instructions if you are NOT working in a virtual environment.
 
 ### Step 2: Clone the Vehicle Counting Repository
-Clone the repository and ensure that vehicle_counting_CV is set as your working directory if you haven't done so already.
+Clone the repository and ensure that vehicle-counting-smart-sensor-v2 is set as your working directory if you haven't done so already.
 
 ```python
-!git clone https://github.com/hamzaelouiaazzani/vehicle_counting_CV.git
+!git clone https://github.com/hamzaelouiaazzani/vehicle-counting-smart-sensor-v2.git
 ```
 
 ### Step 3: Upgrade pip and Install Dependencies
@@ -87,150 +85,13 @@ if torch.cuda.is_available():
     print(f"Setup complete. Using torch {torch.__version__} ({torch.cuda.get_device_properties(0).name if torch.cuda.is_available() else 'CPU'})")
 ```
 
-### Step 5: Run counting
+### Step 5: set the .yaml config file with target rois, lines and params
 
-**Import counting files:**
-
-```python
-from counting.run_count import run
-from counting.count import args
-```
-
-**Explore the arguments to configure your vehicle counting system, including the tracker, counting method, and other settings. Don't Worry, Most arguments are preset by default, so you don’t need to understand them all. However, feel free to adjust and test them for deeper exploration and customization:**
-
-```python
-print(args.__doc__)
-```
-**Now customize your settings and configurations and build your counting system:**
-
-```python
-import os
-args.source = "kech.mp4"
-args.name = "video_results_folder"
-args.counting_approach = "tracking_with_line_vicinity"         # tracking_with_line_vicinity , tracking_with_line_crossing, tracking_with_line_crossing_vicinity
-args.tracking_method = "ocsort"
-args.save=True
-args.verbose=True
-args.line_vicinity=1.5
-args.line_point11 = (0.0, 0.25)
-args.line_point12 = (1.0, 0.75)
-```
-
-**Run the counting process:**
+### Step 6: Verify Torch Installation
+Run the below engine code cell.
 
 
-```python
-# Run the counting algorithm
-counter_yolo , profilers , _  = run(args)
-```
-In the above python instruction:
-- counter_yolo: This object stores all information about the detector, tracking, and counting algorithms used.
-- profilers: This object contains the time taken by each phase of the pipeline for the given video: **Pre-processing----> Detection----> Post-processing----> Tracking----> Counting**.
-- results: This object contains the results of detection and tracking for different objects in the video.
-
-If args.save is set to *True* Your results will be saved as a video in runs\count\video_results_folder, which will be automatically generated when you run your vehicle counting system experiment. Feel free to view it this folder!
-
-**Extract information about the your video:**
-
-```python
-# video attribues:
-counter_yolo.video_attributes
-```
-
-**Show the vehicle counting system Results of your video:**
-
-**Total counts:**
-
-```python
-# Counting Results
-print(f"The number of vehicles counted by the algorithm is: {counter_yolo.counter}")
-```
-
-**Counts per vehicle type:**
-
-```python
-def tensor_to_dict(count_per_class):
-    # Dictionary keys for the selected vehicle types
-    vehicle_types = ["bicycle", "car", "motorcycle", "bus", "truck"]
-
-    # Indices corresponding to the vehicle types in the tensor
-    indices = [1, 2, 3, 5, 7]
-
-    # Create the dictionary
-    vehicle_counts = {vehicle: int(count_per_class[idx].item()) for vehicle, idx in zip(vehicle_types, indices)}
-
-    return vehicle_counts
-
-print(f"The number of vehicles per type counted by the algorithm is: {tensor_to_dict(counter_yolo.count_per_class)}")
-```
-
-**Measure the time taken by each phase of your vehicle counting system's pipeline for the video:**
-
-```python
-print(f"The time required for the PRE-PROCESSING step is: {profilers[0].t} ")
-print(f"The time required for the DETECTION (Inference) step is: {profilers[1].t} ")
-print(f"The time required for the POS-PROCESSING step is: {profilers[2].t}")
-print(f"The time required for the TRACKING step is: {profilers[3].t}")
-print(f"The time required for the COUNTING step is: {profilers[4].t}")
-print("-------------------------------------------------------------------------------------------")
-overall_time = profilers[0].t + profilers[1].t + profilers[2].t + profilers[3].t + profilers[4].t
-print(f"The overall time required for the whole counting pipeline with this system (software algorithms + hardware) is: {overall_time}")
-print("-------------------------------------------------------------------------------------------")
-print(f"The average time per frame required for the PRE-PROCESSING step is: {profilers[0].dt} ")
-print(f"The average time per frame required for the DETECTION (Inference) step is: {profilers[1].dt} ")
-print(f"The average time per frame required for the POS-PROCESSING step is: {profilers[2].dt}")
-print(f"The average time per frame required for the TRACKING step is: {profilers[3].dt}")
-print(f"The average time per frame required for the COUNTING step is: {profilers[4].dt}")
-```
-
-## 1.3. Bash/Linux Commands
-
-Note: In case you want to use the Geoforce GPU in your computer to accelerate to speed up processing, kindly install CUDA in your computer and follow these steps to set up and run the application via Bash/Linux commands.
-
-### Using a GeForce GPU in your computer for Accelerated Processing  
-
-To utilize your computer's GeForce GPU to speed up processing, follow these steps:  
-
-1. **Install CUDA:**  
-   Download and install the CUDA toolkit compatible with your GPU from the [NVIDIA CUDA Toolkit Archive](https://developer.nvidia.com/cuda-12-4-0-download-archive).  
-
-2. **Install PyTorch with GPU Support:**  
-   Visit [PyTorch's Get Started Guide](https://pytorch.org/get-started/locally/) to install the appropriate version of PyTorch for your system with GPU (CUDA) support.  
-
-#### Notes  
-- Ensure your GPU driver is up-to-date before installing CUDA.  
-- Follow the instructions on the linked pages carefully to avoid compatibility issues.
-
-### Step 1: Create a Virtual Environment
-Open a terminal and run the following commands to create and activate a virtual environment named `vehicle_counter`:
-
-```bash
-python -m venv vehicle_counter
-source vehicle_counter/bin/activate
-```
-
-### Step 2: Clone vehicle counting repository, Upgrade Pip and Install Dependencies
-Run the following commands to upgrade pip, setuptools, and wheel, and install the repository dependencies:
-```bash
-pip install --upgrade pip setuptools wheel
-git clone https://github.com/hamzaelouiaazzani/vehicle_counting_CV.git  # clone repo
-pip install -e .
-```
-
-### Step 3: Verify Torch Installation
-Run the following commands to verify the installation of PyTorch and check if CUDA is available:
-```bash
-python -c "import torch; print(f'Setup complete. Using torch {torch.__version__} ({torch.cuda.get_device_properties(0).name if torch.cuda.is_available() else 'CPU'})')"
-```
-
-### Step 4: Run counting: 
-Kindly before running the following counting script be sure you prompt your chosen **args** configuration within the demo.py file (remember you can edit your configuration as you want):
-```bash
-python3 counting/demo.py
-```
-If you set args.save to **True** please check the results saved in folder **\runs\count** that is going to be created.
-
-## 1.4. Running the Repository on NANO JETSON Kit
+## 1.3. Running the Repository on NANO JETSON Kit
 
 Follow these steps to set up and run the repository on a NANO JETSON Developer Kit with GPU support.
 
@@ -243,11 +104,11 @@ Download cuSPARSElt to enable GPU usage with PyTorch and TorchVision:
 ### Step 2: Create and Activate a Virtual Environment
 1. Create a new virtual environment:
    ```bash
-   python3 -m venv my_env
+   python3 -m venv vehicle_counter
    ```
 2. Activate the virtual environment:
    ```bash
-   source my_env/bin/activate
+   source vehicle_counter/bin/activate
    ```
 
 ### Step 3: Check the NVIDIA Forum
@@ -268,8 +129,8 @@ If these versions do not work, refer back to the forum for other compatible vers
 ### Step 5: Clone the Repository
 Clone the repository to your Jetson Kit:
 ```bash
-git clone https://github.com/hamzaelouiaazzani/vehicle_counting_CV.git
-cd vehicle_counting_CV
+!git clone https://github.com/hamzaelouiaazzani/vehicle-counting-smart-sensor-v2.git
+cd vehicle-counting-smart-sensor-v2
 ```
 
 ### Step 6: Install Dependencies
@@ -295,103 +156,702 @@ pip3 install torch-2.3.0-cp310-cp310-linux_aarch64.whl
 pip3 install torchvision-0.18.0a0+6043bc2-cp310-cp310-linux_aarch64.whl
 pip install numpy==1.24.4
 ```
+### Step 9: set the .yaml config file with target rois, lines and params
 
-### Step 9: Run the Application
-Run the counting script:
+# 3. Vehicle Counting — Interactive Demo & Visualiser
+
+This notebook provides an interactive demo and runner for the **Vehicle Counting Smart Sensor** pipeline (BoXMOT + Ultralytics detector). It preserves all original code cells unchanged — the code below is the original work; these top cells are documentation only so you can use this notebook as the project README.
+
+Use this notebook to:
+- Visualise and set geometric shapes (ROIs, lines, polygons) using the interactive selectors.
+- Run the end-to-end pipeline: frame grabbing → detection (Ultralytics) → tracking (BoXMOT) → counting → video output.
+- Produce `output_counting.mp4` containing the visualised counting demo.
+
+Keep the code cells unchanged when running to ensure reproducibility.
+
+
+## Quick Start (short)
+
+1. Activate your conda environment (example name `smart_sensor`):
+   ```bash
+   conda activate smart_sensor
+   ```
+2. Ensure required Python packages are installed (see detailed list below).
+3. Edit the `source` path in the notebook to point to your video file (example: `C:\Users\hamza\Datasets\TrafficDatasets\IMAROC_2\kech37.mp4`).
+4. Run the notebook cells from top to bottom (or run the main execution block that starts the pipeline).
+5. The demo writes `output_counting.mp4` in the working directory.
+
+Press `q` in the OpenCV window to stop the run safely (the loop polls `cv2.waitKey(1)` and honors 'q').
+
+
+## Environment & Dependencies (recommended)
+
+This notebook was developed and tested with the following environment (as reported in outputs):
+- Python 3.10
+- Ultralytics `8.4.5` (YOLO11n model example)
+- PyTorch (as reported by `ultralytics` output; e.g. `torch-2.5.1+cu121`)
+- CUDA-enabled GPU recommended for real-time performance (example used NVIDIA GeForce RTX 3050)
+
+Suggested install (example using pip in the conda env):
 ```bash
-cd vehicle_counting_CV
-python3 counting/demo.py
+pip install ultralytics==8.4.5 boxmot opencv-python torch torchvision numpy pandas tqdm
+# plus any project-specific dependencies found in requirements.txt
 ```
-Ensure that you configure the desired arguments in the `demo.py` file before running. Results will be saved in the `runs/count` folder if `args.save` is set to `True`.
+
+If you use `conda`, make sure CUDA toolkit and compatible `torch` build are installed for GPU acceleration.
 
 
-# 2. Configuring Your Arguments for Optimal Counting Performance
+## Inputs & Outputs
 
-This repository offers a wide range of configurable features to tailor the counting process to your specific use-case. You can customize the algorithm with various arguments, select your preferred detector, tracker, or counting approach, and flexibly set the counting lines using percentages. Additionally, you can apply spatial masks to focus on specific areas of your video frames and more.
+- **Input video file**: set `source` variable to your video path (e.g. `your_traffic_video.mp4`).
+- **Output video**: `output_counting.mp4` (written using `cv2.VideoWriter`).
+- **Interactive selectors**: polygon, rectangle, lines, OBB, points — use the selectors in `utils.shape_setter` to create ROIs/lines.
 
-To explore and understand these configurable arguments in detail, please execute the following command:
+Notes:
+- The notebook contains an interactive selection snippet (using OpenCV GUI). If you run this on a remote or headless server, those interactive selectors will not function — use a local GUI session.
+- Ensure the `source` path is readable and `cv2.VideoCapture(source)` works before selecting shapes.
+
+
+## Cell-by-cell explanation (map to original cells)
+
+I kept the original code cells unchanged. Here is a short description for each block so you can use this notebook as documentation/README:
+
+1. `pwd` — convenience cell to check the current working directory (original cell preserved).
+2. `cd ..` — example command to change directory (original cell preserved).
+3. Interactive selector script — demonstrates how to open the first frame and run various selectors (PolygonSelector is enabled in the example). Use this to define ROIs, lines, rectangles, OBBs, or single points interactively.
+4. `### Imprt packages` — header cell (markdown) in the original notebook indicating the start of imports.
+5. Imports and model initialisation — imports OpenCV, NumPy, Torch and project modules; initialises `UltralyticsDetector("yolo11n.pt", conf=0.50)`, sets COCO vehicle classes and device.
+6. A small introspection cell that prints model predictor args (confidence and image size).
+7. `TorchvisionDetector` snippet — shows how to initialize an alternative detector (Faster R-CNN) if desired.
+8. Ordered counters helper function and counting configs — builds `CountVisualizer`, loads counting areas via `CountingConfigLoader`, orders counters for rendering.
+9. Profilers setup — initialises profiling helpers for different pipeline stages (inference, pre/post, tracking, counting, etc.).
+10. Tracker selection and initialisation — example shows `tracking_method = "bytetrack"` and creates a `Tracker`.
+11. Main pipeline runner — this is the main loop: opens `FrameGrabber`, initialises `VideoWriter`, iterates over frames, runs `my_model.detect_to_track()`, updates the tracker, counts with configured counters, renders the visualisation using `CountVisualizer`, writes frames to `output_counting.mp4` and shows them in an OpenCV window. The loop is interruptible with the `q` key and properly releases resources in the `finally` block.
+12. Final small introspection cells that display counts (`g_count`, etc.).
+
+If you want me to produce a dedicated `README.md` (Markdown file) extracted from these explanations, tell me and I will generate it as a separate file too.
+
+
+## Important Tips & Troubleshooting
+
+- **Interactive GUI:** The selectors and `cv2.imshow` require a desktop session. They will not work on headless servers unless you use a virtual display (e.g., Xvfb on Linux).
+- **VideoWriter:** The notebook uses `mp4v` fourcc. If output fails to open, confirm codecs are available on your platform. The code asserts `video_writer.isOpened()`.
+- **Stopping:** Press **`q`** in the OpenCV window to stop early. The `finally` block ensures `frame_grabber.release()`, `video_writer.release()` and `cv2.destroyAllWindows()` are called.
+- **Paths:** Use absolute paths for `source` to avoid accidental wrong working directory problems.
+- **GPU:** For real-time performance use CUDA-enabled PyTorch and Ultralytics. Confirm `my_model.predictor.device` shows `cuda`.
+- **Versioning:** The notebook was run with `Ultralytics 8.4.5`. If you use another version, some APIs or model names might differ.
+
+If you encounter errors when running the pipeline, copy the full traceback here and I will help you debug quickly.
+
+
+## License & Attribution
+
+Keep the notebook's original license headers (if any) and the repository LICENSE file. This documentation is intended to accompany the project and does not change original code authorship.
+
+— End of documentation header — original code cells follow unchanged below —
 
 
 
 ```python
-from counting.count import args
-print(args.__doc__)
+pwd
 ```
 
+
+```python
+cd ..
+```
+
+### Use the following script to visulaize and set the geometric shapes (rois polygons, lines,...) you want to set in the con
+
+
+```python
+from utils.shape_setter import PointSelector , LineSelector , TwoLineSelector , PolygonSelector , RectangleSelector , OBBSelector
+import cv2
+import numpy as np
+source = r"you_target_video.mp4" 
+
+stride = 1
+stride_method = "periodic_stride"             # "burst_stride", "periodic_stride", "random_sampling"
+
+cap = cv2.VideoCapture(source)
+ok, first_frame = cap.read()
+cap.release()
+
+if not ok or first_frame is None:
+    print("Failed to read example frame; please provide a valid path ('kech.mp4' used in example).")
+else:
+    # # line
+    # line_sel = LineSelector(max_display_size=900, auto_confirm=True, preview_wait_secs=None)
+    # line = line_sel.select_line(first_frame)
+    # print("Selected line:", line)
+
+    # # two lines
+    # two_sel = TwoLineSelector(max_display_size=900, auto_confirm=True, preview_wait_secs=None)
+    # two = two_sel.select_two_lines(first_frame)
+    # print("Selected two lines:", two)
+
+    #polygon
+    poly_sel = PolygonSelector(max_display_size=900, min_points=4, auto_close_on_click_near_first=True,
+                               close_pixel_radius=12, preview_wait_secs=None)
+    poly = poly_sel.select_polygon(first_frame)
+    print("Selected polygon:", poly)
+
+    # # rectangle
+    # rect_sel = RectangleSelector(max_display_size=900, auto_confirm=True, preview_wait_secs=None)
+    # rect = rect_sel.select_rectangle(first_frame)
+    # if rect is None:
+    #     print("Cancelled")
+    # else:
+    #     print("Selected rectangle:", rect)
+
+
+    # # # obb£
+    # obb_selector = OBBSelector()
+    # obb_points = obb_selector.select_obb(first_frame)
+    # if obb_points is not None:
+    #     print("Selected OBB points:", obb_points)
+    # else:
+    #     print("Selection cancelled")
+
+
+    # selector = PointSelector()
+    # pt = selector.select_point(first_frame)
+    # print("Selected point:", pt)
+
+```
+
+### Imprt packages
+
+
+```python
+import time
+
+#####################################################################################################################################
+
+import cv2
+import numpy as np
+import torch
+
+#####################################################################################################################################
+
+from framegrabber.frame_grabber import FrameGrabber
+
+from detection.ultralytics_detectors import UltralyticsDetector
+
+from tracking.track import Tracker
+
+from counting.count_config_loader import CountingConfigLoader
+from counting.count_visualizer import CountVisualizer
+
+#####################################################################################################################################
+
+# Check the ultralytics repo/website/blogs to see all availaible detectors: just put the name here to use it for vehicle counting
+my_model = UltralyticsDetector("yolo11n.pt" , conf=0.50)         # rtdetr-l.pt  yolo11n.pt yolo26n.pt yolo11n_finetuned
+
+# target classes to be filtered later (ex: vehicles with 4 wheels)
+coco_vehicles = [1, 2, 3, 5, 7]                              # Bicycle, Car, Motorcycle, Bus and Truck
+vehicles_4_wheels = [2, 5, 7]                                # Car, Bus and Truck
+device = my_model.predictor.device
+```
+
+    Ultralytics 8.4.5  Python-3.10.18 torch-2.5.1+cu121 CUDA:0 (NVIDIA GeForce RTX 3050 6GB Laptop GPU, 6144MiB)
+    YOLO11n summary (fused): 100 layers, 2,616,248 parameters, 0 gradients, 6.5 GFLOPs
+    Successfully yolo11n.pt model is initialized and warmedup !
     
-        This class contains configuration parameters for the vehicle counting system using the YOLO model and various tracking approaches.
+
+
+```python
+my_model.predictor.args.conf , my_model.predictor.args.imgsz
+```
+
+
+
+
+    (0.5, [640])
+
+
+
+
+```python
+# In case you want to use torchivision detectors
+from detection.torchvision_detectors import TorchvisionDetector
+
+det = TorchvisionDetector(
+    "fasterrcnn_resnet50_fpn_v2",
+    conf=0.6,
+    device="cuda"
+)
+
+# detections = det.detect_to_track(frame.data)
+```
+
+* yolo26n: YOLO26n summary (fused): 122 layers, 2,408,932 parameters, 0 gradients, 5.4 GFLOPs
+* YOLOv8n summary (fused): 72 layers, 3,151,904 parameters, 0 gradients, 8.7 GFLOPs
+* YOLO11n summary (fused): 100 layers, 2,616,248 parameters, 0 gradients, 6.5 GFLOPs
+
+
+```python
+def ordered_counters(*counters):
+    """
+    Accepts:
+      ([roi1, roi2], global_ctr)
+      or
+      ([roi1, roi2, global_ctr],)
+
+    Returns:
+      flat, ordered list of counter objects
+    """
+
+    # ---- flatten ----
+    flat = []
+    for c in counters:
+        if isinstance(c, (list, tuple)):
+            flat.extend(c)
+        else:
+            flat.append(c)
+
+    # ---- semantic order ----
+    def key(ctr):
+        info = ctr.get_area_info()
+        # ROI / line first, global last
+        if info.get("polygon") is not None or info.get("line") is not None:
+            return (0, info.get("name", ""))
+        return (1, info.get("name", ""))
+
+    return sorted(flat, key=key)
+
+
+# You can set region of interest polygons, lines of counting, paramters of counting, logic of counting and other hyperparameters from the .yaml in the config folder
+count_vis = CountVisualizer(
+    show_legend=False,   # hide class legend
+    show_summary=True    # keep total summary box
+)
+
+# Load counting params as set in the counting yaml config file.
+counter_load = CountingConfigLoader(default_classes = vehicles_4_wheels)
+
+# set counters
+counters = counter_load.load_counting_areas()
+
+# order counters for visualisation
+counters = ordered_counters(*counters)
+counters
+```
+
+
+
+
+    [<counting.count.CountingROIWithIds at 0x1cf3f276d10>,
+     <counting.count.CountingROIWithIds at 0x1cf3f2f5f90>,
+     <counting.count.CountingGlobalAreaWithIds at 0x1cf3f18bac0>]
+
+
+
+
+```python
+# Profiles to diagnonise multiple stages latencies
+from utils.profilers import Profile
+
+device = my_model.predictor.device
+inf_profile = Profile(device=device)
+pre_profile = Profile(device=device)
+post_profile = Profile(device=device)
+track_profile = Profile()
+count_profile = Profile()
+grabber_profile = Profile()
+plot_profile = Profile()
+```
+
+
+```python
+# Availaible trackers: ocsort, bytetrack, strongsort, deepocsort, hybridsort, boosttrack, botsort
+tracking_method = "bytetrack"
+tracker = Tracker(tracking_method)
+```
+
+
+```python
+source = r"your_traffic_video.mp4"                   # 0 "kech.mp4" , "vid1.mp4"
+source = r"C:\Users\hamza\Datasets\TrafficDatasets\IMAROC_2\kech37.mp4"
+# --- Video writer setup ---
+output_path = "output_counting.mp4"
+
+fps = 30
+
+# Get frame size (wait until first frame if needed)
+ret, test_cap = cv2.VideoCapture(source).read()
+h, w = test_cap.shape[:2]
+
+fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # widely supported
+video_writer = cv2.VideoWriter(output_path, fourcc, fps, (w, h))
+
+assert video_writer.isOpened(), "Failed to open VideoWriter"
+
+
+
+stride = 2
+stride_method = "periodic_stride"             # "burst_stride", "periodic_stride", "random_sampling"
+
+frame_grabber = FrameGrabber(source, stride=stride, stride_method=stride_method)
+
+
+if not frame_grabber.open():
+    raise RuntimeError("Failed to open source")
+# ensure window exists (main thread)
+cv2.namedWindow('BoXMOT + ultralytics', cv2.WINDOW_NORMAL)
+if frame_grabber._grabber_mode=="queue":
+# start producer
+    frame_grabber.start()
+
+try:
+    with torch.inference_mode():
+        while True:
+            with grabber_profile:
+                # try to get a frame but don't block forever
+                frame = frame_grabber.get_frame(timeout=0.1)  # <-- short timeout keeps loop responsive
+                    
+            if frame is not None:
+                print(f"frame_grabber index: {frame.read_idx}")
+
+                with inf_profile:
+                    ready_to_track_array = my_model.detect_to_track(frame.data)
+   
+                with track_profile:
+                    res = tracker.update(ready_to_track_array , frame.data)
+                    # print(f"tracking array: {res} for counter: {counters[2]}")
+
+                ## Plot detection for ultralytics models
+                # det_array_plot = my_model.plot()
+                ## Plot detection for Torchvision models
+                # det_array_plot = det.plot(frame.data, detections)
+
+                # Plot tracks
+                track_array_plot = tracker.tracker.plot_results(frame.data, show_trajectories=True)
+
+                with count_profile:
+                    g_count = counters[2].count(res)
+                    roi1_count = counters[0].count(res)
+                    roi2_count = counters[1].count(res)
+                    
+                with plot_profile:
+                    count_plot = count_vis.render(track_array_plot, *counters)
+
+
+                # --- WRITE FRAME TO VIDEO ---
+                video_writer.write(count_plot)
+                    
+                    
+                # mark processed & show
+                frame_grabber.mark_processed(frame)
+
+                cv2.imshow('BoXMOT + ultralytics', count_plot)
+                
+            else:
+                # no frame this iteration (timeout), you may choose to display a placeholder
+                # or simply continue — but still poll for key events below
+                pass
+
+            # ALWAYS poll keyboard events so 'q' is detected even when no frame was available
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q'):
+                # stop producer and break loop
+                if frame_grabber._grabber_mode=="queue":
+                    frame_grabber.stop(wait=True)
+                break
     
-        Attributes:
-            source (str): Filename of the video to perform counting on.
-                          Need to be set.
-            name (str): Name of the folder for the current experiment results.
-                        Need to be set.
-            yolo_model (Path): Path to the YOLO model file.
-                               Default is 'yolov8n.pt'.
-            reid_model (Path): Path to the re-identification model file used if the tracker employs appearance description of objects.
-                               Examples include 'osnet_x0_25_market1501.pt', 'mobilenetv2_x1_4_msmt17.engine', etc.
-            tracking_method (str): Method used for tracking. Options include 'bytetrack', 'botsort', 'strongsort', 'ocsort', 'deepocsort', and 'hybridsort'.
-            imgsz (list): Input size of the frames.
-                          Default is [640].
-            conf (float): Confidence threshold for detection.
-                          Default is 0.6.
-            iou (float): Intersection over Union (IoU) threshold.
-                         Default is 0.7.
-            device (str): Device used for running the model (GPU by default).
-                          Default is ''.
-            show (bool): Whether to display the video scene. Not supported in Google Colab.
-                         Default is False.
-            save (bool): Whether to save the videos illustrating the tracking results.
-                         Default is True.
-            classes (list): List of class indices to detect.
-                            Default is [1, 2, 3, 5, 7] (vehicles).
-            project (str): Folder to save the tracking results.
-                           Default is 'runs/count'.
-            exist_ok (bool): Whether to overwrite existing results.
-                             Default is True.
-            half (bool): Whether to use half-precision (16-bit floating-point format) to reduce memory consumption.
-                         Default is False.
-            vid_stride (int): Frame stride, e.g., process all frames with stride=1 or process every other frame with stride=2.
-                              Default is 1.
-            show_labels (bool): Whether to display labels (e.g., car, truck, bus) in the saved video results.
-                                Default is True.
-            show_conf (bool): Whether to display confidence scores of detections.
-                              Default is False.
-            save_txt (bool): Whether to save results in a text file format.
-                             Default is False.
-            save_id_crops (bool): Whether to save tracking results for each object in frames.
-                                  Default is True.
-            save_mot (bool): Whether to save tracking results in a report file.
-                             Default is True.
-            line_width (int): Line width of the bounding boxes.
-                              Default is None.
-            per_class (bool): Whether to count per class.
-                              Default is True.
-            verbose (bool): Whether to enable verbose logging.
-                            Default is False.
-            counting_approach (str): Approach for counting vehicles. Options include 'detection_only', 'tracking_without_line', 'tracking_with_line_vicinity', 'tracking_with_line_crossing', 'tracking_with_line_crossing_vicinity' ,  'tracking_with_two_lines'.
-                            Default is 'tracking_with_two_lines'.
-                                     
-            line_point11 (tuple): Coordinates of the first point of the first line. Values between 0 and 1 indicate percentages.
-                                  For example, (0.4, 0.0) means 40% of the frame width (pixel 0.4 * image width) and 0% of the frame height (pixel 0).
-                                  When masking the video frames with included_box, it becomes 0.4 * new width after mask.
-            line_point12 (tuple): Coordinates of the second point of the first line. Values between 0 and 1 indicate percentages.
-                                  For example, (0.3, 1.0) means 30% of the frame width (pixel 0.3 * image width) and 100% of the frame height (pixel image height).
-            line_vicinity (float): Vicinity of the line for counting. This argument is used in the 'detection_only' or 'tracking_with_line' counting approaches and ignored otherwise ('tracking_without_line' or 'tracking_with_two_lines').
-                                   Default is 0.1.
-            line_point21 (tuple): Coordinates of the first point of the second line. Values between 0 and 1 indicate percentages.
-                                  For example, (0.6, 0.0) means 60% of the frame width (pixel 0.6 * image width) and 0% of the frame height (pixel 0).
-                                  This argument is considered only in the 'tracking_with_two_lines' counting approach and ignored otherwise.
-            line_point22 (tuple): Coordinates of the second point of the second line. Values between 0 and 1 indicate percentages.
-                                  For example, (0.7, 1.0) means 70% of the frame width (pixel 0.7 * image width) and 100% of the frame height (pixel image height).
-                                  This argument is considered only in the 'tracking_with_two_lines' counting approach and ignored otherwise.
-            use_mask (bool): Whether to use a mask for preprocessing. If set to False, 'visualize_masked_frames' and 'included_box' arguments will be ignored.
-                             If set to True, the percentages for 'line_point11', 'line_point12', 'line_point21', and 'line_point22' will be transformed to pixel values with respect to the included_box.
-                             Default is False.
-            visualize_masked_frames (bool): Whether to visualize masked frames.
-                                            Default is True.
-            included_box (list): Box coordinates for masking, specified as percentages between -1 and 1. For example, [0.1, 0.2, -0.2, -0.1] indicates:
-                                 - The first two values (0.1, 0.2) represent the TOP-LEFT point of the included rectangle when using a mask for frames. 
-                                   This point is 10% of the width and 20% of the height.
-                                 - The last two values (-0.2, -0.1) represent the BOTTOM-RIGHT point of the included rectangle after masking. 
-                                   This point is 80% of the width and 90% of the height.
+                # optional: also break when producer finished (sentinel)
+                if frame_grabber._grabber_mode=="queue":
+                    if frame is None and frame_grabber._stop_event.is_set():
+                        break
+finally:
+    frame_grabber.release()
+    video_writer.release()   # <-- ADD THIS
+    cv2.destroyAllWindows()
+```
+
+    frame_grabber index: 0
+    frame_grabber index: 2
+    frame_grabber index: 4
+    frame_grabber index: 6
+    frame_grabber index: 8
+    frame_grabber index: 10
+    frame_grabber index: 12
+    frame_grabber index: 14
+    frame_grabber index: 16
+    frame_grabber index: 18
+    frame_grabber index: 20
+    frame_grabber index: 22
+    frame_grabber index: 24
+    frame_grabber index: 26
+    frame_grabber index: 28
+    frame_grabber index: 30
+    frame_grabber index: 32
+    frame_grabber index: 34
+    frame_grabber index: 36
+    frame_grabber index: 38
+    frame_grabber index: 40
+    frame_grabber index: 42
+    frame_grabber index: 44
+    frame_grabber index: 46
+    frame_grabber index: 48
+    frame_grabber index: 50
+    frame_grabber index: 52
+    frame_grabber index: 54
+    frame_grabber index: 56
+    frame_grabber index: 58
+    frame_grabber index: 60
+    frame_grabber index: 62
+    frame_grabber index: 64
+    frame_grabber index: 66
+    frame_grabber index: 68
+    frame_grabber index: 70
+    frame_grabber index: 72
+    frame_grabber index: 74
+    frame_grabber index: 76
+    frame_grabber index: 78
+    frame_grabber index: 80
+    frame_grabber index: 82
+    frame_grabber index: 84
+    frame_grabber index: 86
+    frame_grabber index: 88
+    frame_grabber index: 90
+    frame_grabber index: 92
+    frame_grabber index: 94
+    frame_grabber index: 96
+    frame_grabber index: 98
+    frame_grabber index: 100
+    frame_grabber index: 102
+    frame_grabber index: 104
+    frame_grabber index: 106
+    frame_grabber index: 108
+    frame_grabber index: 110
+    frame_grabber index: 112
+    frame_grabber index: 114
+    frame_grabber index: 116
+    frame_grabber index: 118
+    frame_grabber index: 120
+    frame_grabber index: 122
+    frame_grabber index: 124
+    frame_grabber index: 126
+    frame_grabber index: 128
+    frame_grabber index: 130
+    frame_grabber index: 132
+    frame_grabber index: 134
+    frame_grabber index: 136
+    frame_grabber index: 138
+    frame_grabber index: 140
+    frame_grabber index: 142
+    frame_grabber index: 144
+    frame_grabber index: 146
+    frame_grabber index: 148
+    frame_grabber index: 150
+    frame_grabber index: 152
+    frame_grabber index: 154
+    frame_grabber index: 156
+    frame_grabber index: 158
+    frame_grabber index: 160
+    frame_grabber index: 162
+    frame_grabber index: 164
+    frame_grabber index: 166
+    frame_grabber index: 168
+    frame_grabber index: 170
+    frame_grabber index: 172
+    frame_grabber index: 174
+    frame_grabber index: 176
+    frame_grabber index: 178
+    frame_grabber index: 180
+    frame_grabber index: 182
+    frame_grabber index: 184
+    frame_grabber index: 186
+    frame_grabber index: 188
+    frame_grabber index: 190
+    frame_grabber index: 192
+    frame_grabber index: 194
+    frame_grabber index: 196
+    frame_grabber index: 198
+    frame_grabber index: 200
+    frame_grabber index: 202
+    frame_grabber index: 204
+    frame_grabber index: 206
+    frame_grabber index: 208
+    frame_grabber index: 210
+    frame_grabber index: 212
+    frame_grabber index: 214
+    frame_grabber index: 216
+    frame_grabber index: 218
+    frame_grabber index: 220
+    frame_grabber index: 222
+    frame_grabber index: 224
+    frame_grabber index: 226
+    frame_grabber index: 228
+    frame_grabber index: 230
+    frame_grabber index: 232
+    frame_grabber index: 234
+    frame_grabber index: 236
+    frame_grabber index: 238
+    frame_grabber index: 240
+    frame_grabber index: 242
+    frame_grabber index: 244
+    frame_grabber index: 246
+    frame_grabber index: 248
+    frame_grabber index: 250
+    frame_grabber index: 252
+    frame_grabber index: 254
+    frame_grabber index: 256
+    frame_grabber index: 258
+    frame_grabber index: 260
+    frame_grabber index: 262
+    frame_grabber index: 264
+    frame_grabber index: 266
+    frame_grabber index: 268
+    frame_grabber index: 270
+    frame_grabber index: 272
+    frame_grabber index: 274
+    frame_grabber index: 276
+    frame_grabber index: 278
+    frame_grabber index: 280
+    frame_grabber index: 282
+    frame_grabber index: 284
+    frame_grabber index: 286
+    frame_grabber index: 288
+    frame_grabber index: 290
+    frame_grabber index: 292
+    frame_grabber index: 294
+    frame_grabber index: 296
+    frame_grabber index: 298
+    frame_grabber index: 300
+    frame_grabber index: 302
+    frame_grabber index: 304
+    frame_grabber index: 306
+    frame_grabber index: 308
+    frame_grabber index: 310
+    frame_grabber index: 312
+    frame_grabber index: 314
+    frame_grabber index: 316
+    frame_grabber index: 318
+    frame_grabber index: 320
+    frame_grabber index: 322
+    frame_grabber index: 324
+    frame_grabber index: 326
+    frame_grabber index: 328
+    frame_grabber index: 330
+    frame_grabber index: 332
+    frame_grabber index: 334
+    frame_grabber index: 336
+    frame_grabber index: 338
+    frame_grabber index: 340
+    frame_grabber index: 342
+    frame_grabber index: 344
+    frame_grabber index: 346
+    frame_grabber index: 348
+    frame_grabber index: 350
+    frame_grabber index: 352
+    frame_grabber index: 354
+    frame_grabber index: 356
+    frame_grabber index: 358
+    frame_grabber index: 360
+    frame_grabber index: 362
+    frame_grabber index: 364
+    frame_grabber index: 366
+    frame_grabber index: 368
+    frame_grabber index: 370
+    frame_grabber index: 372
+    frame_grabber index: 374
+    frame_grabber index: 376
+    frame_grabber index: 378
+    frame_grabber index: 380
+    frame_grabber index: 382
+    frame_grabber index: 384
+    frame_grabber index: 386
+    frame_grabber index: 388
+    frame_grabber index: 390
+    frame_grabber index: 392
+    frame_grabber index: 394
+    frame_grabber index: 396
+    frame_grabber index: 398
+    frame_grabber index: 400
+    frame_grabber index: 402
+    frame_grabber index: 404
+    frame_grabber index: 406
+    frame_grabber index: 408
+    frame_grabber index: 410
+    frame_grabber index: 412
+    frame_grabber index: 414
+    frame_grabber index: 416
+    frame_grabber index: 418
+    frame_grabber index: 420
+    frame_grabber index: 422
+    frame_grabber index: 424
+    frame_grabber index: 426
+    frame_grabber index: 428
+    frame_grabber index: 430
+    frame_grabber index: 432
+    frame_grabber index: 434
+    frame_grabber index: 436
+    frame_grabber index: 438
+    frame_grabber index: 440
+    frame_grabber index: 442
+    frame_grabber index: 444
+    frame_grabber index: 446
+    frame_grabber index: 448
+    frame_grabber index: 450
+    frame_grabber index: 452
+    frame_grabber index: 454
+    frame_grabber index: 456
+    frame_grabber index: 458
+    frame_grabber index: 460
+    frame_grabber index: 462
+    frame_grabber index: 464
+    frame_grabber index: 466
+    frame_grabber index: 468
+    frame_grabber index: 470
+    frame_grabber index: 472
+    frame_grabber index: 474
+    frame_grabber index: 476
+    frame_grabber index: 478
+    frame_grabber index: 480
+    frame_grabber index: 482
+    frame_grabber index: 484
+    frame_grabber index: 486
+    frame_grabber index: 488
+    frame_grabber index: 490
+    frame_grabber index: 492
+    frame_grabber index: 494
+    frame_grabber index: 496
+    frame_grabber index: 498
+    frame_grabber index: 500
+    frame_grabber index: 502
+    frame_grabber index: 504
+    frame_grabber index: 506
+    frame_grabber index: 508
+    frame_grabber index: 510
+    frame_grabber index: 512
+    frame_grabber index: 514
+    frame_grabber index: 516
+    frame_grabber index: 518
+    frame_grabber index: 520
+    frame_grabber index: 522
+    frame_grabber index: 524
+    frame_grabber index: 526
+    frame_grabber index: 528
+    frame_grabber index: 530
+    frame_grabber index: 532
+    frame_grabber index: 534
+    frame_grabber index: 536
+    frame_grabber index: 538
+    frame_grabber index: 540
+    frame_grabber index: 542
+    frame_grabber index: 544
+    frame_grabber index: 546
+    frame_grabber index: 548
+    
+
+
+```python
+g_count , roi1_count , roi2_count
+```
+
+
+```python
+g_count.total_count , g_count.counts_by_class
+```
