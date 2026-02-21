@@ -1,0 +1,30 @@
+# Counter configuration
+# Regions of Interest for counting:
+# Availaible counting Logics: [["by_vicinity"] , ["by_id"] , ["by_cross_id"] , ["by_id" , "by_vicinity"] , ["by_cross_id" , "by_vicinity"]  , ["by_cross_id" , "by_id" , "by_vicinity"]]. In case of using a polygone, these counting logics will be applied within the polygone
+
+
+rois:
+  - name: "ROI_1"
+    enable: True
+    polygon:   [[947, 6], [365, 1065], [2, 1060], [11, 15]]           # kech48.mp4 [[614, 94], [489, 1756], [6, 1871], [4, 64]]                  
+    box_in_polygon_mode: "center_in_polygon"   # default: intersects_polygon
+    line: [[371, 885], [151, 540]]                                                                  # kech48.mp4 [[1071, 1024], [2, 1011]]                     
+    line_vicinity: 0.15
+    counting_logic:  ["by_cross_id", "by_id" , "by_vicinity"]
+
+
+  - name: "ROI_2"
+    enable: True
+    polygon: [[947, 4], [412, 1058], [1901, 1052], [1901, 17]]         # kech48.mp4  [[614, 105], [518, 1771], [1077, 1856], [1075, 119]]
+    box_in_polygon_mode: "center_in_polygon"
+    line:         [[691, 629], [1828, 461]]        # kech48.mp4 [[1071, 1024], [2, 1011]]  
+    line_vicinity: 0.15
+    counting_logic:  ["by_cross_id", "by_id" , "by_vicinity"]
+    
+    
+# Global for for overall counting:
+global:
+  enable: True
+  counting_logic:  ["by_cross_id", "by_id" , "by_vicinity"]                    # ["by_cross_id" , "by_id" , "by_vicinity"]
+  line:   [[1581, 614], [188, 341]]                                                # kech48.mp4 [[1071, 1024], [2, 1011]]   
+  line_vicinity: 0.15

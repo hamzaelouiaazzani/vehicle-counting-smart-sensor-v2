@@ -1,0 +1,40 @@
+# Counter configuration
+# Regions of Interest for tracking:
+rois:
+  - name: "ROI_1"
+    enable: False
+    polygon: 
+      - [7, 272]
+      - [575, 316]
+      - [529, 707]
+      - [1, 708]
+
+    box_in_polygon_mode: "center_in_polygon"
+    line: null              # [[629, 543], [1267, 550]]            # null
+    line_vicinity: 0.1
+    tracker:
+      method: "ocsort"
+      reid_model: "osnet_x0_25_market1501.pt"
+  - name: "ROI_2"
+    enable: False
+    polygon: 
+      - [620, 340]
+      - [661, 613]
+      - [1182, 556]
+      - [937, 320]
+    box_in_polygon_mode: "center_in_polygon"
+    line: null                  #[[589, 263], [198, 286]]                        #  null
+    line_vicinity: 0.1
+    tracker:
+      method: "bytetrack"
+      reid_model: "osnet_x0_25_market1501.pt"
+
+
+# Global for overall counting:
+global:
+  enable: True
+  line: null           # [[3, 498], [1273, 511]]        # null
+  line_vicinity: 0.1
+  tracker:
+    method: "ocsort"
+    reid_model: "osnet_x0_25_market1501.pt"
